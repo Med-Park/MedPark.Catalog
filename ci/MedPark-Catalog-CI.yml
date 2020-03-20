@@ -70,7 +70,7 @@ steps:
   inputs:
     command: 'build'
     projects: '$(proj-dir)/MedPark.Catalog.csproj'
-    arguments: '-c $(buildConfiguration)'
+    arguments: '-c Release'
   enabled: true
 
 - task: Docker@2
