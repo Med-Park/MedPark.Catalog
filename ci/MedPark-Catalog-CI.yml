@@ -4,9 +4,15 @@
 # https://docs.microsoft.com/azure/devops/pipelines/languages/dotnet-core
 
 trigger:
-- dev
-- master
-- feature/*
+  branches:
+    include:
+      - master
+      - dev
+
+pr:
+  branches:
+    include:
+      - dev
 
 pool:
   vmImage: 'Ubuntu-16.04' 
@@ -15,7 +21,8 @@ variables:
   solution: '**/*.sln'
   buildPlatform: 'Any CPU'
   buildConfiguration: 'Release'
-  proj-dir: "src/MedPark.Catalog/"
+  proj-dir: "src/"
+  imageTag: ''
 
 steps:
 - task: PowerShell@2
@@ -68,19 +75,36 @@ steps:
 
 - task: Docker@2
   displayName: 'Login to Docker Hub'
+  condition: and(succeeded(), or(eq(variables['build.SourceBranch'], 'refs/heads/dev'), eq(variables['build.SourceBranch'], 'refs/heads/master')))
   inputs:
     containerRegistry: 'docker-hub-connection'
     command: 'login'
   enabled: true
 
+- powershell: |
+    $currentBranch = "$(build.SourceBranch)"
+    Write-Host "Current Branch is: $currentBranch"
+
+    if ($currentBranch -eq 'refs/heads/master') {
+      Write-Host ##vso[task.setvariable variable=imageTag;isOutput=true]latest
+      Write-Host "New tag - $env:imageTag"
+    } else {
+      Write-Host "Current Branch is dev/feature"
+      Write-Host ##vso[task.setvariable variable=imageTag]dev
+    }
+  displayName: 'Set Docker image tag based on branch'
+  condition: and(succeeded(), or(eq(variables['build.SourceBranch'], 'refs/heads/dev'), eq(variables['build.SourceBranch'], 'refs/heads/master')))
+  enabled: true
+
 - task: Docker@2
   displayName: 'Build and Push docker image'
+  condition: and(succeeded(), or(eq(variables['build.SourceBranch'], 'refs/heads/dev'), eq(variables['build.SourceBranch'], 'refs/heads/master')))
   inputs:
     containerRegistry: 'docker-hub-connection'
     repository: 'geradedev/medpark-catalog'
     command: 'buildAndPush'
     Dockerfile: '$(proj-dir)/Dockerfile.multistage'
-    tags: dev
+    tags: $(imageTag)
   enabled: true
 
 - task: PublishBuildArtifacts@1
