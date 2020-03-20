@@ -21,7 +21,7 @@ variables:
   solution: '**/*.sln'
   buildPlatform: 'Any CPU'
   buildConfiguration: 'Release'
-  proj-dir: "src/"
+  proj-dir: "src"
   imageTag: ''
 
 steps:
