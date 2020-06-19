@@ -4,6 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using MedPark.Catalog.Dto;
 using MedPark.Catalog.Queries;
+using MedPark.Common;
+using MedPark.Common.Cache;
 using MedPark.Common.Dispatchers;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -23,11 +25,19 @@ namespace MedPark.Catalog.Controllers
 
 
         [HttpGet("{productid}")]
+        [Cached(Constants.Day_In_Seconds)]
         public async Task<IActionResult> Get([FromRoute] ProductQueries query)
         {
-            ProductDetailDto product = await _dispatcher.QueryAsync(query);
+            try
+            {
+                ProductDetailDto product = await _dispatcher.QueryAsync(query);
 
-            return Ok(product);
+                return Ok(QueryResult.QuerySuccess(product));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(QueryResult.QueryFail(ex.Message));
+            }
         }
     }
 }

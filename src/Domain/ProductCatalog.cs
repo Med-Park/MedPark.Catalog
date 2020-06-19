@@ -1,4 +1,5 @@
 ﻿using MedPark.Common;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,7 +14,9 @@ namespace MedPark.Catalog.Domain
 
         }
 
+        [JsonProperty]
         public Guid ProductId { get; private set; }
+        [JsonProperty]
         public Guid CategoryId { get; private set; }
     }
 }

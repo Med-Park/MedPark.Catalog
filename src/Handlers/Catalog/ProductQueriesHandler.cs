@@ -4,6 +4,7 @@ using MedPark.Catalog.Dto;
 using MedPark.Catalog.Queries;
 using MedPark.Common;
 using MedPark.Common.Handlers;
+using MedPark.Common.Mongo;
 using MedPark.Common.Types;
 using System;
 using System.Collections.Generic;
@@ -14,13 +15,13 @@ namespace MedPark.Catalog.Handlers.Catalog
 {
     public class ProductQueriesHandler : IQueryHandler<ProductQueries, ProductDetailDto>
     {
-        private IMedParkRepository<Product> _productsRepo { get; }
-        private IMedParkRepository<ProductCatalog> _catalogRepo { get; }
-        private IMedParkRepository<Category> _categoryRepo { get; }
+        private IMongoRepository<Product> _productsRepo { get; }
+        private IMongoRepository<ProductCatalog> _catalogRepo { get; }
+        private IMongoRepository<Category> _categoryRepo { get; }
 
         private IMapper _mapper { get; }
 
-        public ProductQueriesHandler(IMedParkRepository<Product> productsRepo, IMapper mapper, IMedParkRepository<ProductCatalog> catalogRepo, IMedParkRepository<Category> categoryRepo)
+        public ProductQueriesHandler(IMongoRepository<Product> productsRepo, IMapper mapper, IMongoRepository<ProductCatalog> catalogRepo, IMongoRepository<Category> categoryRepo)
         {
             _productsRepo = productsRepo;
             _mapper = mapper;

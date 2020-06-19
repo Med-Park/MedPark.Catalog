@@ -4,6 +4,7 @@ using MedPark.Catalog.Dto;
 using MedPark.Catalog.Queries;
 using MedPark.Common;
 using MedPark.Common.Handlers;
+using MedPark.Common.Mongo;
 using MedPark.Common.Types;
 using System;
 using System.Collections.Generic;
@@ -14,13 +15,13 @@ namespace MedPark.Catalog.Handlers.Catalog
 {
     public class GetCategoryDetailsHandler : IQueryHandler<CategoryQueries, CategoryDetailDto>
     {
-        private IMedParkRepository<Product> _productsRepo { get; }
-        private IMedParkRepository<ProductCatalog> _catalogRepo { get; }
-        private IMedParkRepository<Category> _categoryRepo { get; }
+        private IMongoRepository<Product> _productsRepo { get; }
+        private IMongoRepository<ProductCatalog> _catalogRepo { get; }
+        private IMongoRepository<Category> _categoryRepo { get; }
 
         private IMapper _mapper { get; }
 
-        public GetCategoryDetailsHandler(IMedParkRepository<Product> productsRepo, IMapper mapper, IMedParkRepository<ProductCatalog> catalogRepo, IMedParkRepository<Category> categoryRepo)
+        public GetCategoryDetailsHandler(IMongoRepository<Product> productsRepo, IMapper mapper, IMongoRepository<ProductCatalog> catalogRepo, IMongoRepository<Category> categoryRepo)
         {
             _productsRepo = productsRepo;
             _mapper = mapper;
@@ -37,10 +38,11 @@ namespace MedPark.Catalog.Handlers.Catalog
 
             CategoryDetailDto categoryDetails = _mapper.Map<CategoryDetailDto>(cat);
 
-            var catProducts = (from c in await _categoryRepo.GetAllAsync()
-                               join pc in await _catalogRepo.GetAllAsync() on c.Id equals pc.CategoryId
-                               join prod in await _productsRepo.GetAllAsync() on pc.ProductId equals prod.Id
-                               select prod).ToList();
+            var categoryCatalog = await _catalogRepo.GetAllAsync(x => x.CategoryId == cat.Id);
+
+            var catalogIds = categoryCatalog.ToList().Select(x => x.ProductId);
+
+            var catProducts = await _productsRepo.GetAllAsync(x => catalogIds.Contains(x.Id));
 
             categoryDetails.Products = _mapper.Map<List<ProductDetailDto>>(catProducts);
 

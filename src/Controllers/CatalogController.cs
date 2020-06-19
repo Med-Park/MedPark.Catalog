@@ -4,7 +4,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using MedPark.Catalog.Dto;
 using MedPark.Catalog.Queries;
+using MedPark.Common;
+using MedPark.Common.Cache;
 using MedPark.Common.Dispatchers;
+using MedPark.Common.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,6 +18,7 @@ namespace MedPark.Catalog.Controllers
     public class CatalogController : ControllerBase
     {
         private IDispatcher _dispatcher { get; }
+
         public CatalogController(IDispatcher dispatcher)
         {
             _dispatcher = dispatcher;
@@ -22,19 +26,35 @@ namespace MedPark.Catalog.Controllers
 
 
         [HttpGet("")]
+        [Cached(Constants.Day_In_Seconds)]
         public async Task<IActionResult> Get([FromRoute] CatalogQuery query)
         {
-            CatalogDetailDto category = await _dispatcher.QueryAsync<CatalogDetailDto>(query);
+            try
+            {
+                CatalogDetailDto catalog = await _dispatcher.QueryAsync<CatalogDetailDto>(query);
 
-            return Ok(category);
+                return Ok(QueryResult.QuerySuccess(catalog));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(QueryResult.QueryFail(ex.Message));
+            }
         }
 
-        [HttpGet("{parentcategoryid}")]
-        public async Task<IActionResult> GetCategoryDetails([FromRoute] CatalogQuery query)
+        [HttpGet("category/{categoryid}")]
+        [Cached(Constants.Day_In_Seconds)]
+        public async Task<IActionResult> GetCategoryDetails([FromRoute] CategoryQueries query)
         {
-            CatalogDetailDto categoryInFull = await _dispatcher.QueryAsync<CatalogDetailDto>(query);
+            try
+            {
+                CategoryDetailDto category = await _dispatcher.QueryAsync<CategoryDetailDto>(query);
 
-            return Ok(categoryInFull);
+                return Ok(QueryResult.QuerySuccess(category));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(QueryResult.QueryFail(ex.Message));
+            }
         }
     }
 }

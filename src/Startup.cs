@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -9,9 +10,12 @@ using AutoMapper;
 using MedPark.Catalog.Domain;
 using MedPark.Catalog.Dto;
 using MedPark.Catalog.Handlers.Catalog;
+using MedPark.Catalog.Infrastructure;
 using MedPark.Catalog.Queries;
 using MedPark.Common;
 using MedPark.Common.Handlers;
+using MedPark.Common.Mongo;
+using MedPark.Common.Mvc;
 using MedPark.Common.RabbitMq;
 using MedPark.Common.Redis;
 using Microsoft.AspNetCore.Builder;
@@ -24,6 +28,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
+using Category = MedPark.Catalog.Domain.Category;
 
 namespace MedPark.Catalog
 {
@@ -42,30 +48,31 @@ namespace MedPark.Catalog
         {
             services.AddAutoMapper(typeof(Startup));
             services.AddRedis(Configuration);
-
-            //Add DBContext
-            services.AddDbContext<CatalogDBContext>(options => options.UseSqlServer(Configuration["Database:ConnectionString"]));
+            services.AddInitializers(typeof(IMongoDbInitializer));
 
             services.AddMvc(mvc => mvc.EnableEndpointRouting = false).SetCompatibilityVersion(CompatibilityVersion.Version_3_0);
         }
 
         public void ConfigureContainer(ContainerBuilder builder)
         {
-            builder.RegisterType<CatalogDBContext>().As<DbContext>().InstancePerLifetimeScope();
             builder.RegisterAssemblyTypes(Assembly.GetEntryAssembly()).AsImplementedInterfaces();
             builder.AddDispatchers();
             builder.AddRabbitMq();
-            builder.AddRepository<Product>();
-            builder.AddRepository<Category>();
-            builder.AddRepository<ProductCatalog>();
+            builder.AddMongo();
+            builder.AddMongoRepository<Product>("product");
+            builder.AddMongoRepository<Category>("category");
+            builder.AddMongoRepository<ProductCatalog>("product-catalog");
+            builder.AddMongoSeeder<MongoCatalogSeeder>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostEnvironment env)
+        public void Configure(IApplicationBuilder app, IHostEnvironment env, IStartupInitializer startupInitializer)
         {
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
+
+                startupInitializer.InitializeAsync();
             }
             else
             {
