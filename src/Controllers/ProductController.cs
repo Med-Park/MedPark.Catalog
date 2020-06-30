@@ -39,5 +39,20 @@ namespace MedPark.Catalog.Controllers
                 return BadRequest(QueryResult.QueryFail(ex.Message));
             }
         }
+
+        [HttpGet("isproductavailable/{productid}")]
+        public async Task<IActionResult> IsProductInStock([FromRoute] IsProductInStockQuery query)
+        {
+            try
+            {
+                bool staockStatus = await _dispatcher.QueryAsync(query);
+
+                return Ok(QueryResult.QuerySuccess(staockStatus));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(QueryResult.QueryFail(ex.Message));
+            }
+        }
     }
 }

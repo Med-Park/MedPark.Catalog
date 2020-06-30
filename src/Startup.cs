@@ -7,12 +7,14 @@ using System.Threading.Tasks;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using AutoMapper;
+using Consul;
 using MedPark.Catalog.Domain;
 using MedPark.Catalog.Dto;
 using MedPark.Catalog.Handlers.Catalog;
 using MedPark.Catalog.Infrastructure;
 using MedPark.Catalog.Queries;
 using MedPark.Common;
+using MedPark.Common.Consul;
 using MedPark.Common.Handlers;
 using MedPark.Common.Mongo;
 using MedPark.Common.Mvc;
@@ -49,6 +51,8 @@ namespace MedPark.Catalog
             services.AddAutoMapper(typeof(Startup));
             services.AddRedis(Configuration);
             services.AddInitializers(typeof(IMongoDbInitializer));
+            services.AddHealthChecks();
+            services.AddConsul();
 
             services.AddMvc(mvc => mvc.EnableEndpointRouting = false).SetCompatibilityVersion(CompatibilityVersion.Version_3_0);
         }
@@ -66,7 +70,7 @@ namespace MedPark.Catalog
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostEnvironment env, IStartupInitializer startupInitializer)
+        public void Configure(IApplicationBuilder app, IHostEnvironment env, IStartupInitializer startupInitializer, IHostApplicationLifetime lifetime, IConsulClient consulClient)
         {
             if (env.IsDevelopment())
             {
@@ -80,9 +84,20 @@ namespace MedPark.Catalog
                 app.UseHsts();
             }
 
+            app.UseRouting();
+            app.UseEndpoints(endpoit =>
+            {
+                endpoit.MapHealthChecks("/health");
+            });
             app.UseHttpsRedirection();
 
             app.UseRabbitMq();
+
+            var serviceID = app.UseConsul();
+            lifetime.ApplicationStopped.Register(() =>
+            {
+                consulClient.Agent.ServiceDeregister(serviceID);
+            });
 
             app.UseMvcWithDefaultRoute();
         }

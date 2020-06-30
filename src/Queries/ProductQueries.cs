@@ -11,4 +11,9 @@ namespace MedPark.Catalog.Queries
     {
         public Guid ProductId { get; set; }
     }
+
+    public class IsProductInStockQuery : IQuery<Boolean>
+    {
+        public Guid ProductId { get; set; }
+    }
 }
