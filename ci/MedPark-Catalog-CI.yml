@@ -47,6 +47,15 @@ steps:
     includePreviewVersions: false
   enabled: true
 
+- task: TriggerPipeline@1
+  inputs:
+    serviceConnection: 'DevOpsAPI ServiceConnection'
+    project: '0ea54f6e-8f03-416c-a91d-56b5f40d0782'
+    Pipeline: 'Build'
+    buildDefinition: 'Med-Park.MedPark.Common'
+    Branch: 'dev'
+  enabled: true
+
 - task: NuGetCommand@2
   displayName: 'Restore NuGet packages for project'
   inputs:
