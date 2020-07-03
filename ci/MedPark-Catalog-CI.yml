@@ -15,7 +15,7 @@ pr:
       - dev
 
 pool:
-  vmImage: windows-latest
+  vmImage: ubuntu-latest
 
 variables:
   solution: '**/*.sln'
@@ -54,7 +54,7 @@ steps:
     Pipeline: 'Build'
     buildDefinition: 'Med-Park.MedPark.Common'
     Branch: 'dev'
-  enabled: true
+  enabled: false
 
 - task: NuGetCommand@2
   displayName: 'Restore NuGet packages for project'
